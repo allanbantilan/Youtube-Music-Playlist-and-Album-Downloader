@@ -1,4 +1,4 @@
-const { spawn } = require("child_process");
+const cmd = require("node-cmd");
 const path = require("path");
 const os = require("os");
 const { default: inquirer } = require("inquirer");
@@ -24,7 +24,6 @@ async function downloadFlow() {
     console.log("👋 Exiting... Goodbye!");
     process.exit(0);
   }
-
   const { url } = await inquirer.prompt([
     {
       type: "input",
@@ -34,11 +33,14 @@ async function downloadFlow() {
         if (!input || input.trim() === "") {
           return "⚠️ You must provide a URL!";
         }
+
         const ytRegex =
           /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|music\.youtube\.com)\/.+$/;
+
         if (!ytRegex.test(input.trim())) {
           return "⚠️ Please enter a valid YouTube or YouTube Music link!";
         }
+
         return true;
       },
     },
@@ -76,47 +78,35 @@ async function downloadFlow() {
 
   console.log("🎶 Downloading...");
 
-  let commandArgs;
+  // Playlist download
   if (choice.startsWith("1")) {
-    // Playlist
-    commandArgs = [
-      "-x",
-      "--audio-format",
-      "mp3",
-      "--ffmpeg-location",
-      ffmpegPath,
-      "-o",
-      `${destination}/%(playlist_title)s/%(title)s.%(ext)s`,
-      url,
-    ];
-  } else {
-    // Album
-    commandArgs = [
-      "-x",
-      "--audio-format",
-      "mp3",
-      "--ffmpeg-location",
-      ffmpegPath,
-      "-o",
-      `${destination}/%(album)s/%(playlist_index)02d - %(artist)s - %(title)s.%(ext)s`,
-      url,
-    ];
+    const command = `"${ytdlpPath}" -x --audio-format mp3 --ffmpeg-location "${ffmpegPath}" -o "${destination}/%(playlist_title)s/%(title)s.%(ext)s" "${url}"`;
+
+    const process = cmd.run(command);
+    process.stdout.on("data", (data) => console.log(data.toString()));
+    process.stderr.on("data", (data) => console.error(data.toString()));
+
+    process.on("close", () => {
+      console.log(
+        "✅ Playlist download finished! Files saved in:",
+        destination
+      );
+      askAgain();
+    });
   }
+  // Album download
+  else {
+    const command = `"${ytdlpPath}" -x --audio-format mp3 --ffmpeg-location "${ffmpegPath}" -o "${destination}/%(album)s/%(playlist_index)02d - %(artist)s - %(title)s.%(ext)s" "${url}"`;
 
-  const process = spawn(ytdlpPath, commandArgs, { shell: true });
+    const process = cmd.run(command);
+    process.stdout.on("data", (data) => console.log(data.toString()));
+    process.stderr.on("data", (data) => console.error(data.toString()));
 
-  process.stdout.on("data", (data) => {
-    console.log(data.toString());
-  });
-
-  process.stderr.on("data", (data) => {
-    console.error(data.toString());
-  });
-
-  process.on("close", () => {
-    console.log("✅ Download finished! Files saved in:", destination);
-    askAgain();
-  });
+    process.on("close", () => {
+      console.log("✅ Album download finished! Files saved in:", destination);
+      askAgain();
+    });
+  }
 }
 
 async function askAgain() {
