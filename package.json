@@ -1,7 +1,7 @@
 {
   "name": "youtube-music-playlist-downloader",
   "version": "1.0.0",
-  "description": "YouTube Music Playlist Downloader",
+  "description": "YouTube Music Playlist & Album Downloader",
   "main": "index.js",
   "bin": "index.js",
   "scripts": {
@@ -14,5 +14,14 @@
   "dependencies": {
     "inquirer": "^12.9.3",
     "node-cmd": "^5.0.0"
+  },
+  "pkg": {
+    "assets": [
+      "ffmpeg/**/*",
+       "yt-dlp.exe"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ]
   }
 }
